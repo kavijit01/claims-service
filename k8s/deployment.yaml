@@ -25,7 +25,7 @@ spec:
             - name: DYNAMODB_TABLE
               value: "ClaimsTable"
             - name: S3_BUCKET
-              value: "claims-service-storage-080254842500" # Use your actual bucket name
+              value: "claim-notes-bucket" # Use your actual bucket name
             - name: AWS_REGION
               value: "us-east-2"
           resources:

@@ -5,8 +5,7 @@ Resources:
   ClaimsDataBucket:
     Type: AWS::S3::Bucket
     Properties:
-      # Replace 'unique-name' with something specific like 'claims-api-data-12345'
-      BucketName: !Sub 'claims-data-${AWS::AccountId}-${AWS::Region}'
+      BucketName: !Sub 'claim-notes-bucket'
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
