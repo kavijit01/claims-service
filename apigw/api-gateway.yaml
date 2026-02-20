@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'API Gateway Front-Door for EKS Claim API'
+
+Resources:
+  # 1. THE FRONT DOOR (The API itself)
+  ClaimsHttpApi:
+    Type: 'AWS::ApiGatewayV2::Api'
+    Properties:
+      Name: 'Claims-External-API'
+      ProtocolType: 'HTTP'
+      Description: 'Public entrance for Claim Status requests'
+
+  # 2. THE PRIVATE TUNNEL (VPC Link)
+  # This is the "Private Phone Line" that connects the Lobby to the Back Office
+  EksVpcLink:
+    Type: 'AWS::ApiGatewayV2::VpcLink'
+    Properties:
+      Name: 'EKS-Private-Link'
+      # We put the tunnel in the same private subnets as your EKS nodes
+      SubnetIds: !Split [",", !ImportValue ClaimsPrivateSubnets]
+
+  # 3. THE RECEPTIONIST'S INSTRUCTIONS (Integration)
+  # Tells the API Gateway exactly where to send the traffic inside the VPC
+  ApiIntegration:
+    Type: 'AWS::ApiGatewayV2::Integration'
+    Properties:
+      ApiId: !Ref ClaimsHttpApi
+      IntegrationType: HTTP_PROXY
+      IntegrationMethod: ANY
+      ConnectionType: VPC_LINK
+      ConnectionId: !Ref EksVpcLink
+      # This points to the Internal Load Balancer created by your K8s Service
+      # Replace the URL below with your actual Internal NLB DNS or an ImportValue
+      IntegrationUri: !ImportValue ClaimsInternalNLB-DNS
+      PayloadFormatVersion: '1.0'
+
+  # 4. THE SPECIFIC DESK (Route)
+  # Defines the URL path the user actually types (e.g., /status)
+  ApiRoute:
+    Type: 'AWS::ApiGatewayV2::Route'
+    Properties:
+      ApiId: !Ref ClaimsHttpApi
+      RouteKey: 'ANY /status/{proxy+}' # This catches all requests to /status
+      Target: !Join [ '/', [ 'integrations', !Ref ApiIntegration ] ]
+
+  # 5. THE OPEN SIGN (Stage)
+  # This actually deploys the API so it can be used
+  ApiStage:
+    Type: 'AWS::ApiGatewayV2::Stage'
+    Properties:
+      ApiId: !Ref ClaimsHttpApi
+      StageName: '$default' # The live version
+      AutoDeploy: true
+
+Outputs:
+  InvokeUrl:
+    Description: 'The URL users will call'
+    Value: !GetAtt ClaimsHttpApi.ApiEndpoint

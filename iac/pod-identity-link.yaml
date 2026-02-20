@@ -1,0 +1,13 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Links the IAM Role to the EKS Service Account using Pod Identity'
+
+Resources:
+  ClaimsAppIdentityAssociation:
+    Type: 'AWS::EKS::PodIdentityAssociation'
+    Properties:
+      # We import the cluster name from the EKS stack
+      ClusterName: !ImportValue ClaimsCluster-Name
+      Namespace: default
+      ServiceAccount: claims-service-sa
+      # We import the role ARN from the IAM stack
+      RoleArn: !ImportValue ClaimsEKS-AppRole-ARN

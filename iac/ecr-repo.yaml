@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ECR Repository for Claims Service'
+
+Resources:
+  ClaimsServiceRepository:
+    Type: 'AWS::ECR::Repository'
+    Properties:
+      RepositoryName: 'claims-service'
+      # Scans images for vulnerabilities on push
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      # Encrypts images using AWS Managed KMS
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      # Lifecycle policy to keep only the last 10 images
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep last 10 images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": { "type": "expire" }
+              }
+            ]
+          }
+
+Outputs:
+  RepositoryUri:
+    Value: !GetAtt ClaimsServiceRepository.RepositoryUri
+    Export:
+      Name: ClaimsService-ECR-URI

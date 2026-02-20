@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Fine-grained permissions for Claims API - S3, DynamoDB, and Bedrock'
+
+Resources:
+  ClaimsAppAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: ClaimsAppAccessPolicy
+      Description: 'Policy for EKS worker nodes to access project-specific storage, DB, and AI'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          # 1. S3 Permissions: Scoped to the specific Claims bucket
+          - Effect: Allow
+            Action:
+              - 's3:PutObject'
+              - 's3:GetObject'
+              - 's3:ListBucket'
+              - 's3:DeleteObject' # Optional: if your app cleans up old files
+            Resource:
+              - !ImportValue ClaimsEKS-DataBucket-ARN
+              - !Sub
+                - '${BucketArn}/*'
+                - BucketArn: !ImportValue ClaimsEKS-DataBucket-ARN
+
+          # 2. DynamoDB Permissions: Scoped to the specific Metadata table
+          - Effect: Allow
+            Action:
+              - 'dynamodb:PutItem'
+              - 'dynamodb:GetItem'
+              - 'dynamodb:UpdateItem'
+              - 'dynamodb:Query'
+              - 'dynamodb:Scan'
+            Resource: !ImportValue ClaimsEKS-Table-ARN
+
+          # 3. Bedrock Permissions: Access to invoke AI models
+          - Effect: Allow
+            Action:
+              - 'bedrock:InvokeModel'
+              - 'bedrock:InvokeModelWithResponseStream'
+            # Note: Model ARNs are global, but you can scope this to specific models
+            # e.g., 'arn:aws:bedrock:*::foundation-model/anthropic.claude-3-sonnet-*'
+            Resource: '*'
+
+Outputs:
+  ClaimsAppPolicyArn:
+    Value: !Ref ClaimsAppAccessPolicy
+    Export:
+      Name: ClaimsApp-Policy-ARN

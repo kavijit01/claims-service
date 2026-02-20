@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: claims-service
+  labels:
+    app: claims-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: claims-service
+  template:
+    metadata:
+      labels:
+        app: claims-service
+    spec:
+      serviceAccountName: claims-service-sa # The identity link we created
+      containers:
+        - name: claims-service
+          # Replace with your actual ECR image URI
+          image: 080254842500.dkr.ecr.us-east-2.amazonaws.com/claims-service:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DYNAMODB_TABLE
+              value: "ClaimsTable"
+            - name: S3_BUCKET
+              value: "claims-service-storage-080254842500" # Use your actual bucket name
+            - name: AWS_REGION
+              value: "us-east-2"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: claims-service-lb
+spec:
+  type: LoadBalancer
+  selector:
+    app: claims-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080

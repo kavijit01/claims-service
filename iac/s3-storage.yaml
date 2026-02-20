@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'S3 Bucket for Claim Document Storage'
+
+Resources:
+  ClaimsDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      # Replace 'unique-name' with something specific like 'claims-api-data-12345'
+      BucketName: !Sub 'claims-data-${AWS::AccountId}-${AWS::Region}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+Outputs:
+  BucketName:
+    Value: !Ref ClaimsDataBucket
+    Export:
+      Name: ClaimsEKS-DataBucket-Name
+  BucketArn:
+    Value: !GetAtt ClaimsDataBucket.Arn
+    Export:
+      Name: ClaimsEKS-DataBucket-ARN

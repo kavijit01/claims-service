@@ -2,6 +2,7 @@ package com.introspect.claims.service;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
@@ -21,6 +22,12 @@ public class ClaimsService implements IClaimsService{
     private final S3Client s3Client;
     private final BedrockRuntimeClient bedrockClient;
 
+    @Value("${aws.dynamodb.tableName}")
+    private String tableName;
+
+    @Value("${aws.s3.bucketName}")
+    private String bucketName;
+
     public ClaimsService(DynamoDbClient dynamoDb, S3Client s3Client, BedrockRuntimeClient bedrockClient) {
         this.dynamoDb = dynamoDb;
         this.s3Client = s3Client;
@@ -35,7 +42,7 @@ public class ClaimsService implements IClaimsService{
     @Override
     public Map<String, Object> getClaimFromDb(String claimId) {
         GetItemRequest request = GetItemRequest.builder()
-                .tableName("ClaimsTable")
+                .tableName(tableName)
                 .key(Map.of("claimId", AttributeValue.builder().s(claimId).build()))
                 .build();
         return dynamoDb.getItem(request).item().entrySet().stream()
@@ -45,7 +52,7 @@ public class ClaimsService implements IClaimsService{
     @Override
     public String processGenAISummary(String claimId) {
         // 1. Fetch Notes from S3
-        String notes = s3Client.getObjectAsBytes(r -> r.bucket("claim-notes-bucket").key(claimId + ".txt"))
+        String notes = s3Client.getObjectAsBytes(r -> r.bucket(bucketName).key(claimId + ".txt"))
                 .asUtf8String();
 
         // 2. Construct Prompt for Claude 3 (Bedrock)

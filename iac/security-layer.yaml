@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Enabling Amazon Inspector and AWS Security Hub'
+
+Resources:
+  # 1. Enable Security Hub
+  SecurityHub:
+    Type: 'AWS::SecurityHub::Hub'
+    Properties:
+      EnableDefaultStandards: true # Enables CIS and AWS Best Practices automatically
+      ControlFindingGenerator: 'SECURITY_CONTROL'
+
+  # 2. Enable Amazon Inspector (v2)
+  # Note: In CloudFormation, Inspector is often enabled via a simplified
+  # resource or account-level activation.
+  # CORRECT
+  InspectorFilter:
+    Type: 'AWS::InspectorV2::Filter'
+    Properties:
+      Name: 'SuppressLowSeverity'
+      FilterAction: SUPPRESS  # <--- Changed from 'Action' to 'FilterAction'
+      Description: 'Hide low severity findings to reduce noise'
+      FilterCriteria:
+        Severity:
+          - Comparison: EQUALS
+            Value: LOW
+
+Outputs:
+  SecurityHubArn:
+    Value: !Ref SecurityHub

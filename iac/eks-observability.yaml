@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudWatch and X-Ray (ADOT) Add-ons for EKS'
+
+Resources:
+  # 1. CloudWatch Agent & Fluent Bit (Metrics & Logs)
+  CloudWatchAddon:
+    Type: AWS::EKS::Addon
+    Properties:
+      AddonName: amazon-cloudwatch-observability
+      ClusterName: !ImportValue ClaimsCluster-Name
+      ResolveConflicts: OVERWRITE
+
+  # 2. ADOT Collector (X-Ray Tracing)
+  ADOTAddon:
+    Type: AWS::EKS::Addon
+    Properties:
+      AddonName: adot
+      ClusterName: !ImportValue ClaimsCluster-Name
+      ResolveConflicts: OVERWRITE
+
+Outputs:
+  CloudWatchStatus:
+    Value: !Ref CloudWatchAddon
+  AdotStatus:
+    Value: !Ref ADOTAddon

@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: 'IAM Roles for EKS Cluster, Nodes, and Application Pods with Automated Pod Identity Association'
+
+Resources:
+  # 1. THE MANAGER ROLE (EKS Cluster Control Plane)
+  EKSClusterRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - eks.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+
+  # 2. THE WORKER ROLE (EC2 Nodes)
+  EKSNodeRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - !ImportValue ClaimsApp-Policy-ARN
+
+  # 3. THE APPLICATION ROLE (Pod-Level Permissions)
+  ClaimsAppRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'ClaimsServicePodRole-${AWS::Region}'
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: pods.eks.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+              - 'sts:TagSession'
+      ManagedPolicyArns:
+        - !ImportValue ClaimsApp-Policy-ARN
+
+  # 4. THE AUTOMATED LINK (EKS Pod Identity Association)
+  # This replaces the manual CLI command in your .bat file
+#  ClaimsAppIdentityAssociation:
+#    Type: 'AWS::EKS::PodIdentityAssociation'
+#    Properties:
+#      ClusterName: Claims-Service-Cluster
+#      Namespace: default
+#      ServiceAccount: claims-service-sa
+#      RoleArn: !GetAtt ClaimsAppRole.Arn
+
+Outputs:
+  ClusterRoleArn:
+    Value: !GetAtt EKSClusterRole.Arn
+    Export:
+      Name: ClaimsEKS-ClusterRole-ARN
+  NodeRoleArn:
+    Value: !GetAtt EKSNodeRole.Arn
+    Export:
+      Name: ClaimsEKS-NodeRole-ARN
+  AppRoleArn:
+    Value: !GetAtt ClaimsAppRole.Arn
+    Export:
+      Name: ClaimsEKS-AppRole-ARN

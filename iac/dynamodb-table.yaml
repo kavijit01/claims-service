@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'DynamoDB Table for Claim Status Metadata'
+
+Resources:
+  ClaimsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'ClaimsMetadata-${AWS::StackName}'
+      AttributeDefinitions:
+        - AttributeName: ClaimId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ClaimId
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      # Encryption at rest is enabled by default, but let's be explicit
+      SSESpecification:
+        SSEEnabled: true
+
+Outputs:
+  TableName:
+    Value: !Ref ClaimsTable
+    Export:
+      Name: ClaimsEKS-TableName
+  TableArn:
+    Value: !GetAtt ClaimsTable.Arn
+    Export:
+      Name: ClaimsEKS-Table-ARN

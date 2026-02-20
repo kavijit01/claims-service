@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'EKS Cluster with Automated Pod Identity Agent'
+
+#Parameters:
+#  AdminUserArn:
+#    Type: String
+#    Description: 'REQUIRED: The ARN of the IAM user/role deploying this stack'
+
+Resources:
+  # 1. THE EKS CLUSTER
+  EKSCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: Claims-Service-Cluster
+      Version: '1.29'
+      RoleArn: !ImportValue ClaimsEKS-ClusterRole-ARN
+      AccessConfig:
+        AuthenticationMode: API_AND_CONFIG_MAP
+      ResourcesVpcConfig:
+        SubnetIds: !Split [",", !ImportValue ClaimsPrivateSubnets]
+        EndpointPrivateAccess: true
+        EndpointPublicAccess: true
+
+  # 2. POD IDENTITY AGENT ADDON
+  # This replaces the "aws eks create-addon" command in your script
+  PodIdentityAgent:
+    Type: 'AWS::EKS::Addon'
+    Properties:
+      AddonName: eks-pod-identity-agent
+      ClusterName: !Ref EKSCluster
+    DependsOn: EKSCluster # Wait for cluster to be ready
+
+  # 3. ADMIN ACCESS (Uncommented for convenience)
+#  AdminAccessEntry:
+#    Type: 'AWS::EKS::AccessEntry'
+#    DependsOn: EKSCluster
+#    Properties:
+#      ClusterName: !Ref EKSCluster
+#      PrincipalArn: !Ref AdminUserArn
+#      Type: STANDARD
+#      AccessPolicies:
+#        - PolicyArn: 'arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy'
+#          AccessScope:
+#            Type: cluster
+
+Outputs:
+  ClusterName:
+    Value: !Ref EKSCluster
+    Export:
+      Name: ClaimsCluster-Name

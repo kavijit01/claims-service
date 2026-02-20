@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'EKS Managed Node Group (The Workers)'
+
+Resources:
+  EKSNodeGroup:
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      ClusterName: !ImportValue ClaimsCluster-Name
+      NodegroupName: Claims-Api-Workers
+      # Use the "Worker Badge" we created in Phase 2
+      NodeRole: !ImportValue ClaimsEKS-NodeRole-ARN
+      # Place them in the Private subnets so they aren't on the public street
+      Subnets: !Split [",", !ImportValue ClaimsPrivateSubnets]
+
+      ScalingConfig:
+        MinSize: 2
+        DesiredSize: 2
+        MaxSize: 3
+
+      # t3.medium is a good balance for a lab environment
+      InstanceTypes:
+        - t3.medium
+
+      # This ensures the OS is kept up to date by AWS
+      AmiType: AL2_x86_64
+      CapacityType: ON_DEMAND
+
+Outputs:
+  NodeGroupName:
+    Value: !Ref EKSNodeGroup

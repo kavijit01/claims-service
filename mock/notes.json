@@ -1,0 +1,26 @@
+[
+  {
+    "claimId": "CLM-1001",
+    "noteId": "NOTE-A1",
+    "author": "Adjuster-Sarah",
+    "content": "Verified police report and damage photos. Claim approved for full repair amount minus $500 deductible."
+  },
+  {
+    "claimId": "CLM-1002",
+    "noteId": "NOTE-B2",
+    "author": "AI-Summary-Bot",
+    "content": "Potential fraud flag: Claimant reported incident 48 hours after occurrence. Requesting additional witness statements."
+  },
+  {
+    "claimId": "CLM-1003",
+    "noteId": "NOTE-C3",
+    "author": "Adjuster-Mark",
+    "content": "Claim rejected. Damage caused by normal wear and tear, which is explicitly excluded under Policy Section 4B."
+  },
+  {
+    "claimId": "CLM-1006",
+    "noteId": "NOTE-D4",
+    "author": "System-Audit",
+    "content": "High-value claim detected (> $10,000). Escalated to Senior Manager for final verification and signature."
+  }
+]
