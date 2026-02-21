@@ -11,6 +11,7 @@ aws ecr get-login-password --region us-east-2 | docker login --username AWS --pa
 docker push %ECR_URI%:latest
 
 kubectl apply -f ./k8s/deployment.yaml
+kubectl rollout restart deployment claims-service
 kubectl logs -f deployment/claims-service
 
 kubectl get svc claims-service-lb

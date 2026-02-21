@@ -12,6 +12,8 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -45,8 +47,20 @@ public class ClaimsService implements IClaimsService{
                 .tableName(tableName)
                 .key(Map.of("claimId", AttributeValue.builder().s(claimId).build()))
                 .build();
-        return dynamoDb.getItem(request).item().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().s()));
+
+        Map<String, AttributeValue> item = dynamoDb.getItem(request).item();
+
+        if (item == null || item.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        return item.entrySet().stream()
+                .collect(HashMap::new, (m, v) -> {
+                    // Safely handle values: if s() is null, use a placeholder or skip
+                    AttributeValue val = v.getValue();
+                    //String val = v.getValue().s();
+                    m.put(v.getKey(), val.s() != null ? val.s() : val.n() != null ? val.n() : "");
+                }, Map::putAll);
     }
 
     @Override
@@ -68,11 +82,13 @@ public class ClaimsService implements IClaimsService{
         // 3. Invoke Bedrock
         JSONObject payload = new JSONObject()
                 .put("anthropic_version", "bedrock-2023-05-31")
-                .put("max_tokens", 1000)
+                .put("max_tokens", 1024)
+                .put("temperature",0.5)
                 .put("messages", new JSONArray().put(new JSONObject().put("role", "user").put("content", prompt)));
 
         InvokeModelRequest request = InvokeModelRequest.builder()
-                .modelId("anthropic.claude-3-sonnet-20240229-v1:0")
+                .modelId("us.anthropic.claude-sonnet-4-20250514-v1:0")
+                //.contentType("application/json")
                 .body(SdkBytes.fromUtf8String(payload.toString()))
                 .build();
 
